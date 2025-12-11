@@ -1,4 +1,4 @@
-# SecureChat AI – Voice-Based Cybersecurity Assistant
+# PhishNet – Intelligent Threat Analyzer
 
 SecureChat AI is a simple web app that helps users check whether a message or link looks suspicious.  
 Users can type or speak a message, and the system analyzes it for possible phishing or cyber threats.
