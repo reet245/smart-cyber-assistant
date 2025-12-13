@@ -24,6 +24,11 @@ The goal of this project is to combine JavaScript, basic AI-style logic, and cyb
 
 ---
 
+## Live Demo
+https://phishnet-intelligent-threat-analyzer.onrender.com
+
+---
+
 ## Main Features
 
 - Voice input and voice output
@@ -95,8 +100,6 @@ securechat-ai
    - Security reason
    - Safety advice
 5. The result is also spoken using text-to-speech.
----
-## Live Demo
-https://phishnet-intelligent-threat-analyzer.onrender.com
+
 
 
