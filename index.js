@@ -1,52 +1,68 @@
 'use strict';
 
-require('dotenv').config()
-const APIAI_TOKEN = process.env.APIAI_TOKEN;
-const APIAI_SESSION_ID = process.env.APIAI_SESSION_ID;
-
 const express = require('express');
 const app = express();
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
 
-app.use(express.static(__dirname + '/views')); // html
-app.use(express.static(__dirname + '/public')); // js, css, images
+// Static files
+app.use(express.static(__dirname + '/public'));
+app.use(express.static(__dirname + '/views'));
 
-const server = app.listen(process.env.PORT || 5000, () => {
-  console.log('Express server listening on port %d in %s mode', server.address().port, app.settings.env);
-});
-
-const io = require('socket.io')(server);
-io.on('connection', function(socket){
-  console.log('a user connected');
-});
-
-const apiai = require('apiai')(APIAI_TOKEN);
-
-// Web UI
+// Home page
 app.get('/', (req, res) => {
-  res.sendFile('index.html');
+  res.sendFile(__dirname + '/views/index.html');
 });
 
-io.on('connection', function(socket) {
+// Socket connection
+io.on('connection', (socket) => {
+  console.log('User connected');
+
   socket.on('chat message', (text) => {
-    console.log('Message: ' + text);
+    console.log('Message:', text);
 
-    // Get a reply from API.ai
+    // 🔐 Phishing detection logic
+    const phishingKeywords = [
+      'verify', 'account', 'bank', 'password', 'urgent',
+      'click', 'free', 'offer', 'refund', 'lottery'
+    ];
 
-    let apiaiReq = apiai.textRequest(text, {
-      sessionId: APIAI_SESSION_ID
+    const urlPattern = /(http|https):\/\/[^\s]+/g;
+
+    let score = 0;
+    let reasons = [];
+
+    phishingKeywords.forEach(word => {
+      if (text.toLowerCase().includes(word)) {
+        score++;
+        reasons.push(`Suspicious keyword: ${word}`);
+      }
     });
 
-    apiaiReq.on('response', (response) => {
-      let aiText = response.result.fulfillment.speech;
-      console.log('Bot reply: ' + aiText);
-      socket.emit('bot reply', aiText);
-    });
+    if (urlPattern.test(text)) {
+      score += 2;
+      reasons.push('Suspicious URL detected');
+    }
 
-    apiaiReq.on('error', (error) => {
-      console.log(error);
-    });
+    let risk = 'Low';
+    if (score >= 3) risk = 'Medium';
+    if (score >= 5) risk = 'High';
 
-    apiaiReq.end();
+    const reply = `
+Risk Level: ${risk}
+Reasons: ${reasons.length ? reasons.join(', ') : 'No major threat detected'}
+`;
 
+    socket.emit('bot reply', reply);
   });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
+});
+
+// Start server
+const PORT = process.env.PORT || 5000;
+http.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
